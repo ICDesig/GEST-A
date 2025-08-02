@@ -1,34 +1,30 @@
-// src/pages/agence/Login.jsx
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../services/api';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
-    if (error) setError(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
+    setError('');
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      if (credentials.email === 'admin@courrier.com' && credentials.password === 'password') {
-        console.log('Connexion réussie - redirection vers le dashboard');
-        // navigate('/agence/dashboard');
-      } else {
-        throw new Error('Identifiants incorrects');
-      }
+      const data = await login(credentials.email, credentials.password);
+      localStorage.setItem('token', data.access_token);
+      navigate('/dashboard');
     } catch (err) {
-      setError('Email ou mot de passe incorrect.');
+      setError('Identifiants incorrects. Veuillez vérifier votre email et mot de passe.');
     } finally {
       setIsLoading(false);
     }

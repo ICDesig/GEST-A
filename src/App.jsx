@@ -9,6 +9,7 @@ import Confirmation from './pages/public/Confirmation';
 
 import Login from './pages/agence/login';
 import Dashboard from './pages/agence/Dashboard';
+import sidebard from './pages/agence/sidebar';
 
 import './assets/tailwind.css';
 
@@ -25,6 +26,7 @@ function App() {
 
         {/* 🔐 Portail agence */}
         <Route path="/agence/login" element={<Login />} />
+        <Route path="agence/sidebar" element={<sidebar/>} />
         <Route path="/agence/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
