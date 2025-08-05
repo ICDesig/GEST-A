@@ -45,8 +45,12 @@ if (role === 'Dg') {
 } else if (role === 'Bureau D\'ordre') {
   navigate('/agence/direction2/AccueilB');
 } else if (role === 'Direction traitante') {
+  navigate('/agence/direction4/Accueil4');
+}
+  else if (role === 'Administrateur') {
   navigate('/agence/direction3/Accueil3');
-} else {
+}
+else {
   navigate('/agence/dashboard');
 }
 

@@ -17,6 +17,12 @@ import FormP from './pages/agence/Direction2/formulaireP';
 import FormM from './pages/agence/Direction2/formulaireM';
 
 import Accueil3 from './pages/agence/Direction3/Accueil3';
+import AccueilB from './pages/agence/Direction2/AccueilB';
+import Accueil3 from './pages/agence/direction3/Accueil3';
+import FormUtilisateur from './pages/agence/utilisateurs/FormUtilisateur';
+import FormCategorie from './pages/agence/utilisateurs/Formcategorie';
+import AjoutRole from './pages/agence/roles/AjouterRole';
+import ListeUtilisateurs from './pages/agence/utilisateurs/ListeUtilisateurs';
 
 //import './assets/tailwind.css';
 
@@ -41,6 +47,12 @@ function App() {
         <Route path="/agence/direction2/formulaireP" element={<FormP />} />
         <Route path="/agence/direction2/formulaireM" element={<FormM />} />
 
+        <Route path="/agence/utilisateurs/form-utilisateur" element={<FormUtilisateur />} />
+        <Route path="/agence/utilisateurs/form-categorie" element={<FormCategorie />} />
+        <Route path="/agence/roles/ajout-role" element={<AjoutRole />} />
+        <Route path="/agence/utilisateurs/liste-utilisateurs" element={<ListeUtilisateurs />} />
+        
+        {/* Redirection par défaut */}
 
        
       </Routes>
