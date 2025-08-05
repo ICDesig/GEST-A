@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { useCourriers } from '../direction1/direction1.controller';
 import {
   Mail,
   Clock,
@@ -15,7 +18,7 @@ import {
   ChevronDown,
   ArrowUpRight,
   ArrowDownRight,
-  Edit,
+  Eye,
   Share2,
   Plus,
   BarChart2,
@@ -25,57 +28,39 @@ import {
   Clock as ClockIcon,
   UserCheck,
 } from 'lucide-react';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+// Enregistrer les composants nécessaires de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [periodFilter, setPeriodFilter] = useState('Jour');
+  const [statusFilter, setStatusFilter] = useState('Tous');
 
-  // Données simulées pour les courriers récents
-  const recentMails = [
-    {
-      id: 1,
-      sender: 'Marie Dubois',
-      subject: 'Demande de congé',
-      type: 'Interne',
-      status: 'pending',
-      priority: 'high',
-      date: '2025-08-02',
-      time: '14:30'
-    },
-    {
-      id: 2,
-      sender: 'Service Comptabilité',
-      subject: 'Facture Fournisseur #2024-001',
-      type: 'Facture',
-      status: 'processed',
-      priority: 'medium',
-      date: '2025-08-02',
-      time: '13:15'
-    },
-    {
-      id: 3,
-      sender: 'Client SARL Martin',
-      subject: 'Réclamation Produit',
-      type: 'Réclamation',
-      status: 'pending',
-      priority: 'high',
-      date: '2025-08-02',
-      time: '11:45'
-    },
-    {
-      id: 4,
-      sender: 'Direction RH',
-      subject: 'Nouvelle procédure',
-      type: 'Circulaire',
-      status: 'processed',
-      priority: 'low',
-      date: '2025-08-01',
-      time: '16:20'
-    }
-  ];
+  const { courriers, loading, error } = useCourriers();
 
-  const getStatusColor = (status) => {
-    switch (status) {
+  if (loading) return <p>Chargement des courriers...</p>;
+  if (error) return <p>Erreur : {error.message}</p>;
+
+  const getStatusColor = (statut) => {
+    switch (statut) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'processed': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
@@ -92,13 +77,111 @@ const Dashboard = () => {
     }
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
+  const getStatusText = (statut) => {
+    switch (statut) {
       case 'pending': return 'En attente';
       case 'processed': return 'Traité';
       case 'rejected': return 'Rejeté';
       default: return 'Inconnu';
     }
+  };
+
+  const filterCourriersByStatus = (courriers, statusFilter) => {
+    if (statusFilter === 'Tous') {
+      return courriers;
+    }
+    const statusMap = {
+      'Traité': 'processed',
+      'En attente': 'pending',
+      'Refusé': 'rejected'
+    };
+    const status = statusMap[statusFilter];
+    return courriers.filter(courrier => courrier.statut === status);
+  };
+
+  const filteredCourriers = filterCourriersByStatus(courriers, statusFilter);
+
+  // Données pour le graphique de répartition par département
+  const departmentData = {
+    labels: ['Comptabilité', 'RH', 'Ventes', 'Marketing', 'Technique'],
+    datasets: [
+      {
+        label: 'Nombre de courriers',
+        data: [25, 20, 30, 15, 10],
+        backgroundColor: [
+          'rgba(104, 124, 254, 0.6)',
+          'rgba(153, 102, 255, 0.6)',
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(255, 206, 86, 0.6)',
+        ],
+        borderColor: [
+          'rgba(104, 124, 254, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 99, 132, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 206, 86, 1)',
+        ],
+        borderWidth: 1,
+        borderRadius: 5,
+      },
+    ],
+  };
+
+  // Options pour le graphique
+  const departmentOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: '#4B5563',
+          font: {
+            size: 12,
+          },
+        },
+      },
+      title: {
+        display: true,
+        text: 'Répartition des courriers par département',
+        color: '#1F2937',
+        font: {
+          size: 16,
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Nombre de courriers',
+          color: '#6B7280',
+        },
+        ticks: {
+          color: '#6B7280',
+        },
+        grid: {
+          color: '#E5E7EB',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Départements',
+          color: '#6B7280',
+        },
+        ticks: {
+          color: '#6B7280',
+        },
+        grid: {
+          display: false,
+        },
+      },
+    },
+    barPercentage: 0.5,
+    categoryPercentage: 0.8,
   };
 
   return (
@@ -115,7 +198,6 @@ const Dashboard = () => {
                 <h1 className="text-xl font-bold text-gray-900">Gestion Courriers</h1>
               </div>
             </div>
-
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Bell className="w-5 h-5" />
@@ -137,7 +219,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -234,7 +315,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
         {/* Main Content */}
         <div className="grid grid-cols-1 gap-8">
           {/* Recent Mail List */}
@@ -248,55 +328,95 @@ const Dashboard = () => {
                     Nouveau courrier
                   </button>
                 </div>
-
                 {/* Search and Filter */}
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher un courrier..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50"
-                    />
+                <div className="flex flex-wrap items-end gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Recherche</label>
+                    <div className="relative w-64">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Rechercher un courrier..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50 transition-all duration-200"
+                      />
+                    </div>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Filter className="w-4 h-4" />
-                    Filtrer
-                  </button>
-                </div>
-              </div>
-              <div className="divide-y divide-gray-200">
-                {recentMails.map((mail) => (
-                  <div key={mail.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${getPriorityColor(mail.priority)}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium text-gray-900 truncate">{mail.subject}</h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(mail.status)}`}>
-                            {getStatusText(mail.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>De: {mail.sender}</span>
-                          <span>•</span>
-                          <span>{mail.type}</span>
-                          <span>•</span>
-                          <span>{mail.date} à {mail.time}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Share2 className="w-4 h-4" />
-                        </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Période</label>
+                    <div className="relative">
+                      <select
+                        value={periodFilter}
+                        onChange={(e) => setPeriodFilter(e.target.value)}
+                        className="block appearance-none w-full bg-white/50 border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      >
+                        <option value="Jour">Jour</option>
+                        <option value="Semaine">Semaine</option>
+                        <option value="Mois">Mois</option>
+                        <option value="Année">Année</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
-                ))}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                    <div className="relative">
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="block appearance-none w-full bg-white/50 border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      >
+                        <option value="Tous">Tous</option>
+                        <option value="Traité">Traité</option>
+                        <option value="En attente">En attente</option>
+                        <option value="Refusé">Refusé</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <ChevronDown className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-200">
+                {filteredCourriers.length > 0 ? (
+                  filteredCourriers.map((mail) => (
+                    <div key={mail.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${getPriorityColor(mail.priority)}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-medium text-gray-900 truncate">{mail.type_courrier || 'Sujet inconnu'}</h3>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(mail.status)}`}>
+                              {getStatusText(mail.statut)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>De: {mail.nom || 'Expéditeur inconnu'}</span>
+                            <span>•</span>
+                            <span>{mail.type_personne || 'Type inconnu'}</span>
+                            <span>•</span>
+                            <span>
+                              {format(new Date(mail.created_at), 'dd MMMM yyyy HH:mm', { locale: fr })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Share2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="p-4 text-gray-500">Aucun courrier à afficher</p>
+                )}
               </div>
               <div className="p-4 border-t border-gray-200">
                 <button className="w-full text-center text-blue-600 hover:text-blue-800 font-medium py-2">
@@ -306,9 +426,18 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
         {/* Additional Sections for Director General */}
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Department Distribution */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Répartition par département</h3>
+            </div>
+            <div className="h-64">
+              <Bar data={departmentData} options={departmentOptions} />
+            </div>
+          </div>
           {/* Monthly Evolution */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -319,18 +448,6 @@ const Dashboard = () => {
               <p className="text-center text-gray-500">Graphique d'évolution mensuelle</p>
             </div>
           </div>
-
-          {/* Department Distribution */}
-          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <PieChart className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Répartition par département</h3>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-4">
-              <p className="text-center text-gray-500">Graphique de répartition</p>
-            </div>
-          </div>
-
           {/* Critical Mails */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -354,7 +471,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           {/* Top Departments */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -378,7 +494,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           {/* Processing Times */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -402,7 +517,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           {/* Performance */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
             <div className="flex items-center gap-2 mb-4">
