@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'; 
-import { 
-  Mail, 
-  Clock, 
-  FileText, 
-  Users, 
-  TrendingUp, 
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Mail,
+  Clock,
+  FileText,
+  Users,
+  TrendingUp,
   Calendar,
   Search,
   Filter,
@@ -13,247 +14,498 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
   Eye,
   Edit,
   Trash2,
   Plus,
+  AlertCircle,
+  CheckCircle,
   X,
-  Download,
-  User,
+  Send,
   MapPin,
-  Phone,
   Paperclip,
-  AlertCircle
+  Download,
+  ExternalLink,
+  Image,
+  File
 } from 'lucide-react';
 
-const Dashboard = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [recentMails, setRecentMails] = useState([]);
-  const [allCourriers, setAllCourriers] = useState([]);
-  const [filteredCourriers, setFilteredCourriers] = useState([]); // Courriers filtrés par période
-  const [statuts, setStatuts] = useState([]);
-  const [types, setTypes] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [nbTotal, setNbTotal] = useState(0);
-  const [nbRecu, setNbRecu] = useState(0);
-  const [nbAttente, setNbAttente] = useState(0);
-  const [nbTraite, setNbTraite] = useState(0);
-  const [nbEncours, setNbEncours] = useState(0);
-  const [periode, setPeriode] = useState('day');
-  const [stats, setStats] = useState({ total: 0, parStatut: [] });
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [showPeriodFilter, setShowPeriodFilter] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showCourrierDetail, setShowCourrierDetail] = useState(false);
-  const [selectedCourrier, setSelectedCourrier] = useState(null);
+// Composant pour afficher les fichiers joints
+const FichierJoint = ({ fichier, onView }) => {
+  const getFileIcon = (type) => {
+    if (type?.includes('image')) return <Image size={16} className="text-blue-500" />;
+    if (type?.includes('pdf')) return <FileText size={16} className="text-red-500" />;
+    return <File size={16} className="text-gray-500" />;
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+      <div className="flex items-center space-x-3">
+        {getFileIcon(fichier.type)}
+        <div>
+          <p className="text-sm font-medium text-gray-900">{fichier.nom}</p>
+          <p className="text-xs text-gray-500">{fichier.taille || 'Taille inconnue'}</p>
+        </div>
+      </div>
+      <div className="flex space-x-2">
+        <button
+          onClick={() => onView(fichier)}
+          className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+          title="Voir le fichier"
+        >
+          <Eye size={14} />
+        </button>
+        <button
+          onClick={() => window.open(fichier.url, '_blank')}
+          className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+          title="Télécharger"
+        >
+          <Download size={14} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Modal pour voir les fichiers
+const ModalViewFile = ({ fichier, onClose }) => {
+  if (!fichier) return null;
+
+  const isImage = fichier.type?.includes('image');
+  const isPdf = fichier.type?.includes('pdf');
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-semibold text-gray-900">{fichier.nom}</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-4 max-h-[80vh] overflow-auto">
+          {isImage ? (
+            <img src={fichier.url} alt={fichier.nom} className="max-w-full h-auto mx-auto" />
+          ) : isPdf ? (
+            <iframe src={fichier.url} className="w-full h-96 border rounded" />
+          ) : (
+            <div className="text-center py-8">
+              <File size={48} className="mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-600">Aperçu non disponible pour ce type de fichier</p>
+              <button
+                onClick={() => window.open(fichier.url, '_blank')}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Télécharger le fichier
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Modal Component pour les détails du courrier
+const ModalDetailCourrier = ({ courrier, onClose, onSend }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  if (!courrier) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
+          <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-900">Détails du courrier</h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => onSend(courrier)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Send size={16} />
+                  <span>Envoyer</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            {/* Informations principales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Code</label>
+                <p className="text-gray-900 font-mono bg-gray-50 px-3 py-2 rounded-lg">{courrier.code}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Statut</label>
+                <div className="flex items-center space-x-2">
+                  {courrier.statut === 1 && <AlertCircle className="text-orange-500" size={16} />}
+                  {courrier.statut === 2 && <Clock className="text-blue-500" size={16} />}
+                  {courrier.statut === 3 && <CheckCircle className="text-green-500" size={16} />}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    courrier.statut === 1 ? 'bg-orange-100 text-orange-800' :
+                    courrier.statut === 2 ? 'bg-blue-100 text-blue-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {courrier.statut === 1 ? 'Reçu' : courrier.statut === 2 ? 'En cours' : 'Traité'}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Nom</label>
+                <p className="text-gray-900">{courrier.nom || 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Prénom</label>
+                <p className="text-gray-900">{courrier.prenom || 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Structure</label>
+                <p className="text-gray-900">{courrier.nom_structure || 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <p className="text-gray-900">{courrier.email || 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Téléphone</label>
+                <p className="text-gray-900">{courrier.phone || 'N/A'}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Date de création</label>
+                <p className="text-gray-900">{courrier.created_at ? new Date(courrier.created_at).toLocaleDateString('fr-FR') : 'N/A'}</p>
+              </div>
+            </div>
+
+            {/* Informations de lieu */}
+            {(courrier.adresse || courrier.ville || courrier.pays) && (
+              <div className="border-t pt-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <MapPin size={20} className="text-gray-700" />
+                  <h4 className="text-lg font-semibold text-gray-900">Informations de lieu</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {courrier.adresse && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Adresse</label>
+                      <p className="text-gray-900">{courrier.adresse}</p>
+                    </div>
+                  )}
+                  {courrier.ville && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Ville</label>
+                      <p className="text-gray-900">{courrier.ville}</p>
+                    </div>
+                  )}
+                  {courrier.pays && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Pays</label>
+                      <p className="text-gray-900">{courrier.pays}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Objet et contenu */}
+            {(courrier.objet || courrier.contenu) && (
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Contenu du courrier</h4>
+                {courrier.objet && (
+                  <div className="space-y-2 mb-4">
+                    <label className="text-sm font-medium text-gray-700">Objet</label>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{courrier.objet}</p>
+                  </div>
+                )}
+                {courrier.contenu && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Message</label>
+                    <div className="text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                      {courrier.contenu}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fichiers joints */}
+            {courrier.fichiers_joints && courrier.fichiers_joints.length > 0 && (
+              <div className="border-t pt-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Paperclip size={20} className="text-gray-700" />
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    Fichiers joints ({courrier.fichiers_joints.length})
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {courrier.fichiers_joints.map((fichier, index) => (
+                    <FichierJoint
+                      key={index}
+                      fichier={fichier}
+                      onView={setSelectedFile}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de visualisation des fichiers */}
+      {selectedFile && (
+        <ModalViewFile
+          fichier={selectedFile}
+          onClose={() => setSelectedFile(null)}
+        />
+      )}
+    </>
+  );
+};
+
+// Modal pour l'envoi de courrier
+const ModalEnvoyerCourrier = ({ courrier, onClose, onConfirm }) => {
+  const [destinataire, setDestinataire] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Configuration API
-  const API_BASE_URL = 'http://192.168.100.14:8000';
-  
-  const apiCall = async (endpoint, options = {}) => {
+  const handleEnvoyer = async () => {
+    if (!destinataire.trim()) {
+      alert('Veuillez saisir un destinataire');
+      return;
+    }
+    
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
-        },
-        ...options
+      await onConfirm({
+        courrier_id: courrier.id,
+        destinataire: destinataire.trim(),
+        message: message.trim()
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
+      onClose();
     } catch (error) {
-      console.error(`Erreur API ${endpoint}:`, error);
-      throw error;
-    }
-  };
-
-  // Charger les statuts
-  useEffect(() => {
-    apiCall('/api/gosoft/statuts')
-      .then(data => {
-        if (data && Array.isArray(data.items)) {
-          setStatuts(data.items);
-        } else {
-          console.error('Format inattendu des statuts', data);
-        }
-      })
-      .catch(err => {
-        console.error('Erreur API statuts:', err);
-      });
-  }, []);
-
-  // Fonction pour filtrer les courriers par période
-  const filterCourriersByPeriod = (courriers, period) => {
-    const now = new Date();
-    let startDate = new Date();
-
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        const dayOfWeek = now.getDay();
-        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        startDate = new Date(now.getFullYear(), now.getMonth(), diff);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    }
-
-    return courriers.filter(courrier => {
-      const courrierDate = new Date(courrier.created_at);
-      return courrierDate >= startDate && courrierDate <= now;
-    });
-  };
-
-  // Fonction pour récupérer TOUS les courriers
-  const fetchAllCourriers = async () => {
-    try {
-      setLoading(true);
-      let allData = [];
-      let page = 1;
-      let hasMorePages = true;
-
-      while (hasMorePages) {
-        const response = await apiCall(`/api/gosoft/courriers?page=${page}`);
-        if (response && Array.isArray(response.items)) {
-          const mailsFormates = response.items.map(item => {
-            const statutNom = getNomStatut(item.statut);
-            return {
-              id: item.id,
-              sender: item.nom_structure || 'Inconnu',
-              subject: item.code || 'Sans objet',
-              type: item.type_courrier || 'Inconnu',
-              status: statutNom,
-              priority: 'medium',
-              date: new Date(item.created_at).toLocaleDateString(),
-              time: new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              created_at: item.created_at,
-              // Données complètes pour la vue détaillée
-              fullData: item
-            };
-          });
-          
-          allData = [...allData, ...mailsFormates];
-          
-          if (page >= response.last_page) {
-            hasMorePages = false;
-            setLastPage(response.last_page);
-          } else {
-            page++;
-          }
-        } else {
-          hasMorePages = false;
-        }
-      }
-
-      setAllCourriers(allData);
-      
-      // Appliquer le filtre de période actuel
-      applyPeriodFilter(allData, periode);
-
-      // Types uniques
-      const typesUniques = [...new Set(allData.map(mail => mail.type))];
-      setTypes(typesUniques);
-
-    } catch (err) {
-      console.error('Erreur lors de la récupération de tous les courriers:', err);
+      console.error('Erreur lors de l\'envoi:', error);
+      alert('Erreur lors de l\'envoi du courrier');
     } finally {
       setLoading(false);
     }
   };
 
-  // Appliquer le filtre de période et calculer les statistiques
-  const applyPeriodFilter = (courriers, period) => {
-    const filtered = filterCourriersByPeriod(courriers, period);
-    setFilteredCourriers(filtered);
-    
-    // Calculer les statistiques basées sur les courriers filtrés
-    setNbTotal(filtered.length);
-    setNbRecu(filtered.filter(m => m.status.toLowerCase().includes('reçu')).length);
-    setNbAttente(filtered.filter(m => m.status.toLowerCase().includes('attente')).length);
-    setNbTraite(filtered.filter(m => m.status.toLowerCase().includes('trait')).length);
-    setNbEncours(filtered.filter(m => m.status.toLowerCase().includes('cours')).length);
+  if (!courrier) return null;
 
-    // Notifications : courriers du jour
-    const today = new Date().toDateString();
-    const todayMails = courriers.filter(mail => 
-      new Date(mail.created_at).toDateString() === today
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl max-w-md w-full shadow-2xl border border-white/20">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Envoyer le courrier</h3>
+          <p className="text-sm text-gray-600 mt-1">Code: {courrier.code}</p>
+        </div>
+        
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Destinataire *
+            </label>
+            <input
+              type="text"
+              value={destinataire}
+              onChange={(e) => setDestinataire(e.target.value)}
+              placeholder="Service, personne ou département"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Message (optionnel)
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Ajouter un message..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white/50"
+            />
+          </div>
+        </div>
+        
+        <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            disabled={loading}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleEnvoyer}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Envoi...</span>
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                <span>Envoyer</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Dashboard = () => {
+  const [courriers, setCourriers] = useState([]);
+  const [periode, setPeriode] = useState('day');
+  const [statistiques, setStatistiques] = useState([]);
+  const [totalCourriers, setTotalCourriers] = useState(0);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCourriers, setFilteredCourriers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedCourrier, setSelectedCourrier] = useState(null);
+  const [courrierToSend, setCourrierToSend] = useState(null);
+  const [allCourriers, setAllCourriers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const baseURL = 'http://192.168.100.14:8000';
+
+  const fetchCourriers = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${baseURL}/api/gosoft/courriers?periode=${periode}&page=${page}`);
+      setCourriers(res.data.items);
+      setLastPage(res.data.last_page);
+    } catch (error) {
+      console.error('Erreur récupération courriers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllCourriers = async () => {
+    try {
+      const res = await axios.get(`${baseURL}/api/gosoft/courriers?periode=${periode}`);
+      setAllCourriers(res.data.items);
+    } catch (error) {
+      console.error('Erreur récupération tous les courriers:', error);
+    }
+  };
+
+  const fetchStatistiques = async () => {
+    try {
+      const res = await axios.get(`${baseURL}/api/gosoft/courriers/statistiques?periode=${periode}`);
+      setStatistiques(res.data.courriers_par_statut);
+      setTotalCourriers(res.data.total_courriers);
+    } catch (error) {
+      console.error('Erreur récupération statistiques:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(`${baseURL}/api/gosoft/courriers?periode=day`);
+      setNotifications(res.data.items);
+    } catch (error) {
+      console.error('Erreur récupération notifications:', error);
+    }
+  };
+
+  const handleEnvoyerCourrier = async (data) => {
+    try {
+      const response = await axios.post(`${baseURL}/api/gosoft/courriers/${data.courrier_id}/envoyer`, {
+        destinataire: data.destinataire,
+        message: data.message
+      });
+      
+      // Actualiser les données après envoi
+      await fetchCourriers();
+      await fetchStatistiques();
+      
+      alert('Courrier envoyé avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    fetchCourriers();
+    fetchStatistiques();
+    fetchNotifications();
+    fetchAllCourriers();
+  }, [periode, page]);
+
+  useEffect(() => {
+    handleSearch();
+  }, [searchTerm, allCourriers]);
+
+  const handleSearch = () => {
+    const term = searchTerm.toLowerCase();
+    const results = allCourriers.filter(c =>
+      c.code?.toLowerCase().includes(term) ||
+      c.nom?.toLowerCase().includes(term) ||
+      c.prenom?.toLowerCase().includes(term) ||
+      c.nom_structure?.toLowerCase().includes(term) ||
+      c.email?.toLowerCase().includes(term) ||
+      c.phone?.toLowerCase().includes(term) ||
+      c.objet?.toLowerCase().includes(term)
     );
-    setNotificationCount(todayMails.length);
-    
-    // Mettre à jour l'affichage des courriers récents
-    const itemsPerPage = 10;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    setRecentMails(filtered.slice(startIndex, endIndex));
-    setLastPage(Math.ceil(filtered.length / itemsPerPage));
+    setFilteredCourriers(results);
   };
 
-  const getNomStatut = (id) => {
-    const statut = statuts.find(s => s.id === id);
-    return statut ? statut.nom : 'Inconnu';
+  const handlePeriodeChange = (value) => {
+    setPeriode(value);
+    setPage(1);
   };
 
-  // Charger tous les courriers au démarrage
-  useEffect(() => {
-    if (statuts.length > 0) {
-      fetchAllCourriers();
-    }
-  }, [statuts]);
-
-  // Mise à jour lors du changement de page
-  useEffect(() => {
-    if (filteredCourriers.length > 0 && !searchTerm.trim()) {
-      const itemsPerPage = 10;
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      setRecentMails(filteredCourriers.slice(startIndex, endIndex));
-    }
-  }, [currentPage, filteredCourriers, searchTerm]);
-
-  // Récupérer les statistiques API par période
-  const fetchStats = (periodeChoisie = 'day') => {
-    apiCall(`/api/gosoft/statistiques?periode=${periodeChoisie}`)
-      .then(data => {
-        if (data && data.status_code === 200) {
-          setStats({
-            total: data.total_courriers || 0,
-            parStatut: data.courriers_par_statut || []
-          });
-        } else {
-          console.error("Erreur format des statistiques:", data);
-        }
-      })
-      .catch(err => console.error("Erreur API stats:", err));
-  };
-
-  useEffect(() => {
-    fetchStats('day');
-  }, []);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Reçu': return 'bg-yellow-100 text-yellow-800';
-      case 'En Cours': return 'bg-blue-100 text-blue-800';
-      case 'Traité': return 'bg-green-100 text-green-800';
-      case 'Refusé': return 'bg-red-100 text-red-800';
-      case 'Archivé': return 'bg-gray-200 text-gray-700';
+  const getStatutColor = (statut) => {
+    switch (statut) {
+      case 1: return 'bg-orange-100 text-orange-800';
+      case 2: return 'bg-blue-100 text-blue-800';
+      case 3: return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatutIcon = (statut) => {
+    switch (statut) {
+      case 1: return <AlertCircle size={16} />;
+      case 2: return <Clock size={16} />;
+      case 3: return <CheckCircle size={16} />;
+      default: return <Mail size={16} />;
+    }
+  };
+
+  const getStatutLabel = (statut) => {
+    switch (statut) {
+      case 1: return 'Reçu';
+      case 2: return 'En cours';
+      case 3: return 'Traité';
+      default: return 'Inconnu';
     }
   };
 
@@ -266,70 +518,19 @@ const Dashboard = () => {
     }
   };
 
-  const getPeriodLabel = (period) => {
-    switch (period) {
-      case 'day': return 'Aujourd\'hui';
-      case 'week': return 'Cette semaine';
-      case 'month': return 'Ce mois';
-      case 'year': return 'Cette année';
-      default: return 'Aujourd\'hui';
-    }
+  const periodeLabels = {
+    day: 'Aujourd\'hui',
+    week: 'Cette semaine',
+    month: 'Ce mois',
+    year: 'Cette année'
   };
 
-  // Filtrage pour la recherche
-  const searchFilteredMails = searchTerm.trim() 
-    ? filteredCourriers.filter(mail => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          mail.subject.toLowerCase().includes(searchLower) ||
-          mail.sender.toLowerCase().includes(searchLower) ||
-          mail.status.toLowerCase().includes(searchLower) ||
-          mail.type.toLowerCase().includes(searchLower)
-        );
-      })
-    : recentMails;
-
-  // Pagination pour les résultats de recherche
-  const itemsPerPage = 10;
-  const totalFilteredPages = Math.ceil(searchFilteredMails.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedMails = searchTerm.trim() 
-    ? searchFilteredMails.slice(startIndex, endIndex)
-    : searchFilteredMails;
-
-  const handlePeriodChange = (newPeriod) => {
-    setPeriode(newPeriod);
-    setCurrentPage(1);
-    applyPeriodFilter(allCourriers, newPeriod);
-    fetchStats(newPeriod);
-    setShowPeriodFilter(false);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleViewCourrier = async (courrier) => {
-    try {
-      // Récupérer les détails complets du courrier
-      const response = await apiCall(`/api/gosoft/courriers/${courrier.id}`);
-      setSelectedCourrier(response.data || courrier.fullData);
-      setShowCourrierDetail(true);
-    } catch (err) {
-      console.error('Erreur lors de la récupération des détails:', err);
-      // Fallback sur les données disponibles
-      setSelectedCourrier(courrier.fullData);
-      setShowCourrierDetail(true);
-    }
-  };
-
-  const getTodayMails = () => {
-    const today = new Date().toDateString();
-    return allCourriers.filter(mail => 
-      new Date(mail.created_at).toDateString() === today
-    );
+  // Calcul des statistiques pour l'affichage
+  const statsData = {
+    today: totalCourriers,
+    pending: statistiques.find(s => s.nom === 'Reçus')?.total || 0,
+    processed: statistiques.find(s => s.nom === 'Traités')?.total || 0,
+    inProgress: statistiques.find(s => s.nom === 'En cours')?.total || 0
   };
 
   return (
@@ -341,63 +542,59 @@ const Dashboard = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                   <Mail className="w-5 h-5 text-white" />
+                  <Mail className="w-5 h-5 text-white" />
                 </div>
                 <h1 className="text-xl font-bold text-gray-900">Gestion Courriers</h1>
               </div>
             </div>
+            
             <div className="flex items-center gap-4">
-              {/* Notifications */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <Bell className="w-5 h-5" />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </span>
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                   )}
                 </button>
                 
-                {/* Dropdown des notifications */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Courriers d'aujourd'hui</h3>
-                      <p className="text-sm text-gray-600">{notificationCount} nouveau(x) courrier(s)</p>
+                  <div className="absolute right-0 top-12 bg-white/90 backdrop-blur-sm shadow-xl rounded-lg w-80 max-h-96 overflow-auto z-20 border border-gray-200">
+                    <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-3 rounded-t-lg">
+                      <h3 className="font-semibold text-gray-900">Notifications du jour</h3>
                     </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {getTodayMails().slice(0, 5).map(mail => (
-                        <div 
-                          key={mail.id} 
-                          className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
-                          onClick={() => {
-                            handleViewCourrier(mail);
-                            setShowNotifications(false);
-                          }}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Mail className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">{mail.subject}</p>
-                              <p className="text-sm text-gray-600 truncate">De: {mail.sender}</p>
-                              <p className="text-xs text-gray-500">{mail.time}</p>
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        <Bell size={24} className="mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">Aucune notification</p>
+                      </div>
+                    ) : (
+                      <div className="py-2">
+                        {notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            className="px-4 py-3 hover:bg-gray-50/50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                            onClick={() => {
+                              setSelectedCourrier(notif);
+                              setShowNotifications(false);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Nouveau courrier</p>
+                                <p className="text-xs text-gray-500">Code: {notif.code}</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                      {getTodayMails().length === 0 && (
-                        <p className="p-4 text-center text-gray-500">Aucun courrier aujourd'hui</p>
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-
               <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Settings className="w-5 h-5" />
               </button>
@@ -405,7 +602,10 @@ const Dashboard = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">A</span>
                 </div>
-                <LogOut className="text-gray-500 cursor-pointer hover:text-gray-700" />
+                <button className="flex items-center gap-1 text-gray-700 hover:text-gray-900">
+                  <span className="text-sm font-medium">Agent</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -413,61 +613,22 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section avec filtre de période */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de bord</h1>
-            <p className="text-gray-600">
-              Statistiques et courriers - {getPeriodLabel(periode)}
-            </p>
-          </div>
-          
-          {/* Filtre de période */}
-          <div className="relative">
-            <button
-              onClick={() => setShowPeriodFilter(!showPeriodFilter)}
-              className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>{getPeriodLabel(periode)}</span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            
-            {showPeriodFilter && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-                <div className="py-1">
-                  {[
-                    { value: 'day', label: 'Aujourd\'hui' },
-                    { value: 'week', label: 'Cette semaine' },
-                    { value: 'month', label: 'Ce mois' },
-                    { value: 'year', label: 'Cette année' }
-                  ].map(option => (
-                    <button
-                      key={option.value}
-                      onClick={() => handlePeriodChange(option.value)}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors ${
-                        periode === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de bord</h1>
+          <p className="text-gray-600">Bienvenue dans votre espace de gestion des courriers - {periodeLabels[periode]}</p>
         </div>
-        
-        {/* Stats Cards - Statistiques filtrées par période */}
+
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Courriers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{nbTotal}</p>
+                <p className="text-gray-600 text-sm font-medium">Courriers de la période</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{statsData.today}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600 text-sm font-medium">{getPeriodLabel(periode)}</span>
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                  <span className="text-blue-600 text-sm font-medium">Total</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -479,15 +640,15 @@ const Dashboard = () => {
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Reçus</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-1">{nbRecu}</p>
+                <p className="text-gray-600 text-sm font-medium">En attente</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{statsData.pending}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <Clock className="w-4 h-4 text-yellow-500" />
-                  <span className="text-yellow-600 text-sm font-medium">Nouveaux</span>
+                  <AlertCircle className="w-4 h-4 text-orange-500" />
+                  <span className="text-orange-600 text-sm font-medium">À traiter</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <Clock className="text-yellow-600 w-6 h-6" />
+              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Clock className="text-orange-600 w-6 h-6" />
               </div>
             </div>
           </div>
@@ -495,15 +656,15 @@ const Dashboard = () => {
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">En attente</p>
-                <p className="text-3xl font-bold text-orange-600 mt-1">{nbAttente}</p>
+                <p className="text-gray-600 text-sm font-medium">En cours</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{statsData.inProgress}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <AlertCircle className="w-4 h-4 text-orange-500" />
-                  <span className="text-orange-600 text-sm font-medium">À traiter</span>
+                  <Clock className="w-4 h-4 text-blue-500" />
+                  <span className="text-blue-600 text-sm font-medium">En traitement</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <AlertCircle className="text-orange-600 w-6 h-6" />
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Clock className="text-blue-600 w-6 h-6" />
               </div>
             </div>
           </div>
@@ -512,140 +673,295 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-sm font-medium">Traités</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{nbTraite}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{statsData.processed}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
+                  <CheckCircle className="w-4 h-4 text-green-500" />
                   <span className="text-green-600 text-sm font-medium">Terminés</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <FileText className="text-green-600 w-6 h-6" />
+                <CheckCircle className="text-green-600 w-6 h-6" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section statistiques API par période */}
-        {stats.total > 0 && (
-          <div className="mb-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Répartition par statut - {getPeriodLabel(periode)} ({stats.total} courriers)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {stats.parStatut.map((stat, index) => (
-                <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
-                  <p className="text-sm text-gray-600">{stat.statut}</p>
-                </div>
-              ))}
-            </div>
+        {/* Filtres de période */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6 mb-8">
+          <div className="flex items-center space-x-2 mb-4">
+            <Calendar size={20} className="text-gray-700" />
+            <h3 className="text-lg font-semibold text-gray-900">Période</h3>
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            {['day', 'week', 'month', 'year'].map((period) => (
+              <button
+                key={period}
+                onClick={() => handlePeriodeChange(period)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  periode === period
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {periodeLabels[period]}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Main Content - Liste des courriers filtrés */}
-        <div className="lg:col-span-2">
-          <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-sm border border-white/20">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {searchTerm.trim() ? 
-                    `Résultats de recherche (${searchFilteredMails.length})` : 
-                    `Courriers - ${getPeriodLabel(periode)} (${filteredCourriers.length})`
-                  }
-                </h2>
-                <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  <Plus className="w-4 h-4" />
-                  Nouveau courrier
-                </button>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder={`Rechercher dans les courriers (${getPeriodLabel(periode).toLowerCase()})...`}
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50"
-                  />
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Mail List */}
+          <div className="lg:col-span-2">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Courriers récents</h2>
+                  <a 
+                    href="/agence/direction2/choix"
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nouveau courrier
+                  </a>
                 </div>
-                {loading && (
-                  <div className="text-blue-600 text-sm">Chargement...</div>
+                
+                {/* Search and Filter */}
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Rechercher un courrier..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50 backdrop-blur-sm"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Filter className="w-4 h-4" />
+                    Filtrer
+                  </button>
+                </div>
+                {searchTerm && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    {(searchTerm ? filteredCourriers : courriers).length} résultat(s) trouvé(s)
+                  </p>
                 )}
               </div>
-            </div>
-            
-            <div className="divide-y divide-gray-200">
-              {paginatedMails.length > 0 ? (
-                paginatedMails.map(mail => (
-                  <div key={mail.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${getPriorityColor(mail.priority)}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium text-gray-900 truncate">{mail.subject}</h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(mail.status)}`}>
-                            {mail.status}
-                          </span>
+
+              <div className="divide-y divide-gray-200">
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="ml-2 text-gray-600">Chargement...</span>
+                  </div>
+                ) : (
+                  (searchTerm ? filteredCourriers : courriers).slice(0, 10).map((courrier, index) => (
+                    <div key={courrier.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${
+                      courrier.statut === 1 ? 'border-l-orange-500' :
+                      courrier.statut === 2 ? 'border-l-blue-500' :
+                      'border-l-green-500'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-medium text-gray-900 truncate">
+                              {courrier.objet || `Courrier de ${courrier.prenom} ${courrier.nom}`}
+                            </h3>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatutColor(courrier.statut)}`}>
+                              {getStatutLabel(courrier.statut)}
+                            </span>
+                            {courrier.fichiers_joints && courrier.fichiers_joints.length > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <Paperclip size={12} className="text-gray-500" />
+                                <span className="text-xs text-gray-600">{courrier.fichiers_joints.length}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>De: {courrier.prenom} {courrier.nom}</span>
+                            <span>•</span>
+                            <span>{courrier.nom_structure || 'Structure inconnue'}</span>
+                            <span>•</span>
+                            <span>Code: {courrier.code}</span>
+                            {courrier.created_at && (
+                              <>
+                                <span>•</span>
+                                <span>{new Date(courrier.created_at).toLocaleDateString('fr-FR')}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>De: {mail.sender}</span>
-                          <span>•</span>
-                          <span>{mail.type}</span>
-                          <span>•</span>
-                          <span>{mail.date} à {mail.time}</span>
+                        <div className="flex items-center gap-2 ml-4">
+                          <button 
+                            onClick={() => setSelectedCourrier(courrier)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => setCourrierToSend(courrier)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <button 
-                          onClick={() => handleViewCourrier(mail)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Voir les détails"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+
+              {!searchTerm && lastPage > 1 && (
+                <div className="p-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-700">
+                      Page {page} sur {lastPage}
+                    </p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setPage(Math.max(1, page - 1))}
+                        disabled={page === 1}
+                        className={`p-2 rounded-lg transition-colors ${
+                          page === 1 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        onClick={() => setPage(Math.min(lastPage, page + 1))}
+                        disabled={page === lastPage}
+                        className={`p-2 rounded-lg transition-colors ${
+                          page === lastPage 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <p className="p-8 text-center text-gray-500">
-                  {searchTerm.trim() ? 
-                    'Aucun courrier trouvé pour cette recherche.' : 
-                    `Aucun courrier pour ${getPeriodLabel(periode).toLowerCase()}.`
-                  }
-                </p>
+                </div>
+              )}
+
+              {!loading && (searchTerm ? filteredCourriers : courriers).length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  <Mail size={48} className="mx-auto mb-4 text-gray-300" />
+                  <p>Aucun courrier à afficher</p>
+                </div>
               )}
             </div>
-            
-            <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Précédent
-              </button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} sur {searchTerm.trim() ? totalFilteredPages : lastPage}
-                {searchTerm.trim() && ` • ${filteredMails.length} résultats`}
-              </span>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, searchTerm.trim() ? totalFilteredPages : lastPage))}
-                disabled={currentPage === (searchTerm.trim() ? totalFilteredPages : lastPage)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Suivant
-              </button>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
+              <div className="space-y-3">
+                <a 
+                  href="/agence/direction2/choix"
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium">Enregistrer courrier</span>
+                </a>
+                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                  <FileText className="w-5 h-5 text-green-600" />
+                  <span className="font-medium">Générer rapport</span>
+                </button>
+                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                  <Users className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium">Gérer agents</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Statistiques détaillées */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Statistiques détaillées</h3>
+              </div>
+              <div className="space-y-3">
+                {statistiques.map((stat) => (
+                  <div key={stat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      {stat.nom === 'Reçus' && <AlertCircle className="w-4 h-4 text-orange-500" />}
+                      {stat.nom === 'En cours' && <Clock className="w-4 h-4 text-blue-500" />}
+                      {stat.nom === 'Traités' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                      <span className="font-medium text-sm">{stat.nom}</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900">{stat.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">État du système</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Base de données</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Serveur API</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Dernière synchro</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-blue-600">Récent</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Modal de détails */}
+        {selectedCourrier && (
+          <ModalDetailCourrier
+            courrier={selectedCourrier}
+            onClose={() => setSelectedCourrier(null)}
+            onSend={(courrier) => {
+              setSelectedCourrier(null);
+              setCourrierToSend(courrier);
+            }}
+          />
+        )}
+
+        {/* Modal d'envoi */}
+        {courrierToSend && (
+          <ModalEnvoyerCourrier
+            courrier={courrierToSend}
+            onClose={() => setCourrierToSend(null)}
+            onConfirm={handleEnvoyerCourrier}
+          />
+        )}
       </div>
     </div>
   );
