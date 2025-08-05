@@ -17,7 +17,7 @@ import {
   MapPin,
   Sparkles
 } from 'lucide-react';
-
+ import axios from 'axios';
 const FormulaireMorale = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,17 +25,17 @@ const FormulaireMorale = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     nom_structure: '',
-    type_structure: '',
-    secteur_activite: '',
-    adresse: '',
+    //type_structure: '',
+    //secteur_activite: '',
+    //adresse: '',
     type_courrier: '',
-    mail: '',
+    email: '',
     phone: '',
-    responsable_nom: '',
-    responsable_fonction: '',
-    description: '',
-    statut: 'En attente',
-    code: '',
+    //responsable_nom: '',
+    //responsable_fonction: '',
+    texte: '',
+    statut: 1,
+    type_personne: 'Morale',
     fichiers: []
   });
 
@@ -82,9 +82,9 @@ const FormulaireMorale = () => {
   ];
 
   const steps = [
-    { id: 1, title: 'Informations structure', fields: ['nom_structure', 'type_structure', 'secteur_activite', 'adresse'] },
-    { id: 2, title: 'Contact et responsable', fields: ['mail', 'phone', 'responsable_nom', 'responsable_fonction'] },
-    { id: 3, title: 'Détails du courrier', fields: ['type_courrier', 'code', 'description'] },
+    { id: 1, title: 'Informations structure', fields: ['nom_structure'] },
+    { id: 2, title: 'Contact et responsable', fields: ['email', 'phone'] },
+    { id: 3, title: 'Détails du courrier', fields: ['type_courrier', 'texte'] },
     { id: 4, title: 'Documents', fields: ['fichiers'] }
   ];
 
@@ -180,14 +180,35 @@ const FormulaireMorale = () => {
     e.preventDefault();
     if (!canProceedToNext()) return;
     
-    setIsSubmitting(true);
-    
-    // Simulation d'envoi
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const formPayload = new FormData();
+      Object.entries(formData).forEach(([key,value]) => {
+        if (key === 'fichiers') {
+          value.forEach((file) => formPayload.append('fichiers[]', file));
+
+        } else {
+          formPayload.append(key, value);
+        }
+      });
+      for (let pair of formPayload.entries()) {
+        console.log(pair[0]+':' + pair[1]);
+      }
+
+      const response = await axios.post('http://192.168.100.14:8000/api/gosoft/courriers/create',formPayload, {
+        headers : {
+          'Content-type':'multipart/form-data'
+        }
+      }) ;
+      console.log('Reponse API:',response.data);
       setShowSuccess(true);
-      console.log(formData);
-    }, 2000);
+    } catch (error) {
+      console.log("Eurreurs de validation :", error .response.data.errorsList);
+    
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    
   };
 
   const getStepContent = () => {
@@ -214,8 +235,8 @@ const FormulaireMorale = () => {
               />
               {errors.nom_structure && <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.nom_structure}</p>}
             </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
+                  
+            {/*<div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Briefcase className="w-4 h-4" />
@@ -232,9 +253,9 @@ const FormulaireMorale = () => {
                     <option key={index} value={type}>{type}</option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
-              <div className="space-y-2">
+             {/* <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Globe className="w-4 h-4" />
                   Secteur d'activité *
@@ -251,9 +272,9 @@ const FormulaireMorale = () => {
                   ))}
                 </select>
               </div>
-            </div>
+            </div>*?}
 
-            <div className="space-y-2">
+           {/* <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
                 Adresse complète *
@@ -266,8 +287,8 @@ const FormulaireMorale = () => {
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300 resize-none"
                 placeholder="Adresse complète de votre structure"
               />
-            </div>
-          </div>
+            </div>*/}
+          </div> 
         );
 
       case 2:
@@ -281,8 +302,8 @@ const FormulaireMorale = () => {
                 </label>
                 <input
                   type="email"
-                  name="mail"
-                  value={formData.mail}
+                  name="email"
+                  value={formData.email}
                   onChange={handleChange}
                   className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
                     errors.mail 
@@ -315,43 +336,43 @@ const FormulaireMorale = () => {
               </div>
             </div>
 
-            <div className="bg-green-50 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Responsable du dossier
-              </h3>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-green-700">
-                    Nom complet *
-                  </label>
-                  <input
-                    type="text"
-                    name="responsable_nom"
-                    value={formData.responsable_nom}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300"
-                    placeholder="Nom du responsable"
-                  />
-                </div>
+           {/*<div className="bg-green-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Responsable du dossier
+                    </h3>
+                    
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-green-700">
+                          Nom complet *
+                        </label>
+                        <input
+                          type="text"
+                          name="responsable_nom"
+                          value={formData.responsable_nom}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300"
+                          placeholder="Nom du responsable"
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-green-700">
-                    Fonction *
-                  </label>
-                  <input
-                    type="text"
-                    name="responsable_fonction"
-                    value={formData.responsable_fonction}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300"
-                    placeholder="Directeur, Responsable, etc."
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-green-700">
+                          Fonction *
+                        </label>
+                        <input
+                          type="text"
+                          name="responsable_fonction"
+                          value={formData.responsable_fonction}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300"
+                          placeholder="Directeur, Responsable, etc."
+                        />
+                      </div>
+                    </div>
+              </div>*/}
+          </div> 
         );
 
       case 3:
@@ -375,21 +396,7 @@ const FormulaireMorale = () => {
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Paperclip className="w-4 h-4" />
-                Référence du courrier *
-              </label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300"
-                placeholder="REF-ENTREPRISE-2025-001"
-              />
-              <p className="text-xs text-gray-500">Format suggéré: REF-[NOM_STRUCTURE]-[ANNÉE]-[NUMÉRO]</p>
-            </div>
+            
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -397,8 +404,8 @@ const FormulaireMorale = () => {
                 Description détaillée du courrier *
               </label>
               <textarea
-                name="description"
-                value={formData.description}
+                name="texte"
+                value={formData.texte}
                 onChange={handleChange}
                 rows={8}
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:outline-none bg-white transition-all duration-300 resize-none"
@@ -406,7 +413,7 @@ const FormulaireMorale = () => {
               />
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Soyez le plus précis possible</span>
-                <span>{formData.description.length}/1000 caractères</span>
+                <span>{formData.texte.length}/1000 caractères</span>
               </div>
             </div>
           </div>
@@ -449,7 +456,7 @@ const FormulaireMorale = () => {
                   />
                 </label>
                 <p className="text-xs text-gray-500 mt-4">
-                  Documents acceptés: PDF, JPG, PNG, DOC, DOCX (Max. 10MB par fichier)
+                  Documents acceptés: PDF, JPG, PNG, DOC, DOCX (Max. 2MB par fichier)
                 </p>
                 <div className="text-xs text-gray-400 mt-2">
                   Documents suggérés: Statuts, Registre de commerce, Carte d'identité du responsable, etc.

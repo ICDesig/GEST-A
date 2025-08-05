@@ -1,4 +1,4 @@
-import React, { useState , useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Mail, 
   Clock, 
@@ -21,24 +21,9 @@ import {
   Plus
 } from 'lucide-react';
 
-//import Cookies from 'js-cookie';
-
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-
-
-    useEffect(() => {
-    const nomStocké = localStorage.getItem('nom');
-    if (nomStocké) {
-      setNom(nomStocké);
-    }
-  }, []);
-// Exemple à placer juste après un login réussi ou une action utilisateur
-    localStorage.setItem('nom', 'Chretien');
-
-    // Récupération du nom à partir du cookie
-    
 
   // Données simulées pour les courriers récents
   const recentMails = [
@@ -83,7 +68,7 @@ const Dashboard = () => {
       time: '16:20'
     }
   ];
-    
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -110,7 +95,7 @@ const Dashboard = () => {
       default: return 'Inconnu';
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       {/* Header */}
@@ -139,8 +124,7 @@ const Dashboard = () => {
                   <span className="text-white text-sm font-medium">A</span>
                 </div>
                 <button className="flex items-center gap-1 text-gray-700 hover:text-gray-900">
-                  <span className="text-sm font-medium">{nom || 'Invité'} !</span>
-
+                  <span className="text-sm font-medium">Agent</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>

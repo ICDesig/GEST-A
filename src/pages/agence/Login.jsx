@@ -1,36 +1,66 @@
+// src/pages/agence/Login.jsx
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../../services/api';
+
+import { useNavigate } from 'react-router-dom'; // Uncomment if using react-router for navigation
+import axios from 'axios';
+import Cookies from 'js-cookie';
+
 
 const Login = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  
+
+
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    if (error) setError(null); // Efface les erreurs à chaque modification
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
 
-    try {
-      const data = await login(credentials.email, credentials.password);
-      localStorage.setItem('token', data.access_token);
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Identifiants incorrects. Veuillez vérifier votre email et mot de passe.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    const response = await axios.post('http://192.168.100.14:8000/api/gosoft/login', {
+      email: credentials.email,
+      password: credentials.password
+    });
 
-  return (
+    const { access_token, role } = response.data;
+
+localStorage.setItem('token', access_token);
+localStorage.setItem('role', role);
+localStorage.setItem('name',name)
+ 
+
+if (role === 'Dg') {
+  navigate('/agence/direction1/AccueilA');
+} else if (role === 'Bureau D\'ordre') {
+  navigate('/agence/direction2/AccueilB');
+} else if (role === 'Direction traitante') {
+  navigate('/agence/direction3/Accueil3');
+} else {
+  navigate('/agence/dashboard');
+}
+
+
+  } catch (error) {
+    setError('Email ou mot de passe incorrect.');
+    console.error("Erreur de connexion :", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+        
+     return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-100 rounded-full opacity-20"></div>
@@ -42,7 +72,7 @@ const Login = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             <Mail className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestion des Courriers</h1>
+          <h1 className="text-3xl font-bold text-gray-900"> GEC (Gestion Electronique des Courriers)</h1>
           <p className="text-gray-600 mt-2">Connectez-vous à votre espace agent</p>
         </div>
 

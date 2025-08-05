@@ -15,6 +15,7 @@ import {
   EyeOff,
   Sparkles
 } from 'lucide-react';
+import axios from 'axios';
 
 const FormulairePhysique = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -25,16 +26,19 @@ const FormulairePhysique = () => {
     nom: '',
     prenom: '',
     type_courrier: '',
-    mail: '',
+    email: '',
     phone: '',
-    description: '',
-    statut: 'En attente',
-    code: '',
+    texte: '',
+    statut: 1,
+    type_personne: 'Physique',
+    
     fichiers: []
   });
 
   const [errors, setErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [courrierId, setCourrierId] = useState('');
 
   useEffect(() => {
     setIsVisible(true);
@@ -49,8 +53,8 @@ const FormulairePhysique = () => {
   ];
 
   const steps = [
-    { id: 1, title: 'Informations personnelles', fields: ['nom', 'prenom', 'mail', 'phone'] },
-    { id: 2, title: 'Détails du courrier', fields: ['type_courrier', 'code', 'description'] },
+    { id: 1, title: 'Informations personnelles', fields: ['nom', 'prenom', 'email', 'phone'] },
+    { id: 2, title: 'Détails du courrier', fields: ['type_courrier', 'texte'] },
     { id: 3, title: 'Fichiers joints', fields: ['fichiers'] }
   ];
 
@@ -72,6 +76,22 @@ const FormulairePhysique = () => {
           delete newErrors[name];
         }
         break;
+              case 'fichiers':
+          if (!value || value.length === 0) {
+            newErrors[name] = 'Au moins un fichier est requis';
+          } else {
+            const tailleMax = 2 * 1024 * 1024;
+            const tropLourd = Array.from(value).some(file => file.size > tailleMax);
+
+            if (tropLourd) {
+              newErrors[name] = 'Chaque fichier doit faire moins de 2 Mo';
+            } else {
+              delete newErrors[name];
+            }
+          }
+          break;
+
+
       default:
         if (value.trim() === '') {
           newErrors[name] = 'Ce champ est requis';
@@ -146,14 +166,35 @@ const FormulairePhysique = () => {
     e.preventDefault();
     if (!canProceedToNext()) return;
     
-    setIsSubmitting(true);
-    
-    // Simulation d'envoi
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setShowSuccess(true);
-      console.log(formData);
-    }, 2000);
+    try {
+  const formPayload = new FormData();
+  Object.entries(formData).forEach(([key, value]) => {
+    if (key === 'fichiers') {
+      value.forEach((file) => formPayload.append('fichiers[]', file));
+    } else {
+      formPayload.append(key, value);
+    }
+  });
+    for (let pair of formPayload.entries()) {
+      console.log(pair[0]+ ': ' + pair[1]);
+    }
+
+  const response = await axios.post('http://192.168.100.14:8000/api/gosoft/courriers/create', formPayload, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+      // Authorization: `Bearer ${yourToken}`, ← si tu utilises JWT
+    }
+  });
+
+  console.log('Réponse API:', response.data);
+  setShowSuccess(true);
+} catch (error) {
+  console.log("Erreurs de validation :", error.response.data.errorsList);
+
+} finally {
+  setIsSubmitting(false);
+}
+
   };
 
   const getStepContent = () => {
@@ -210,7 +251,7 @@ const FormulairePhysique = () => {
               </label>
               <input
                 type="email"
-                name="mail"
+                name="email"
                 value={formData.mail}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-300 focus:outline-none ${
@@ -266,20 +307,7 @@ const FormulairePhysique = () => {
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Paperclip className="w-4 h-4" />
-                Référence du courrier *
-              </label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white transition-all duration-300"
-                placeholder="REF-2025-001"
-              />
-            </div>
+           
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -287,15 +315,15 @@ const FormulairePhysique = () => {
                 Description du courrier *
               </label>
               <textarea
-                name="description"
-                value={formData.description}
+                name="texte"
+                value={formData.texte}
                 onChange={handleChange}
                 rows={6}
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none bg-white transition-all duration-300 resize-none"
                 placeholder="Décrivez votre demande en détail..."
               />
               <div className="text-xs text-gray-500 text-right">
-                {formData.description.length}/500 caractères
+                {formData.texte.length}/500 caractères
               </div>
             </div>
           </div>
@@ -338,7 +366,7 @@ const FormulairePhysique = () => {
                   />
                 </label>
                 <p className="text-xs text-gray-500 mt-2">
-                  PDF, JPG, PNG, DOC (Max. 10MB par fichier)
+                  PDF, JPG, PNG, DOC (Max. 2MB par fichier)
                 </p>
               </div>
             </div>

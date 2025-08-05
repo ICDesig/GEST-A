@@ -85,7 +85,7 @@ const Accueil = () => {
 
           {/* Main Title */}
           <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-6 leading-tight">
-            GOSOFT
+            GEC (Gestion Electronique des Courriers)
           </h1>
           
           {/* Subtitle */}
