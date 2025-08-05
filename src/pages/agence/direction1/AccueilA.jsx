@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Mail, 
-  Clock, 
-  FileText, 
-  Users, 
-  TrendingUp, 
+import {
+  Mail,
+  Clock,
+  FileText,
+  Users,
+  TrendingUp,
   Calendar,
   Search,
   Filter,
@@ -15,10 +15,15 @@ import {
   ChevronDown,
   ArrowUpRight,
   ArrowDownRight,
-  Eye,
   Edit,
-  Trash2,
-  Plus
+  Share2,
+  Plus,
+  BarChart2,
+  PieChart,
+  AlertTriangle,
+  List,
+  Clock as ClockIcon,
+  UserCheck,
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -110,7 +115,7 @@ const Dashboard = () => {
                 <h1 className="text-xl font-bold text-gray-900">Gestion Courriers</h1>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <Bell className="w-5 h-5" />
@@ -121,10 +126,10 @@ const Dashboard = () => {
               </button>
               <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">A</span>
+                  <span className="text-white text-sm font-medium">DG</span>
                 </div>
                 <button className="flex items-center gap-1 text-gray-700 hover:text-gray-900">
-                  <span className="text-sm font-medium">Agent</span>
+                  <span className="text-sm font-medium">Directeur Général</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
@@ -140,8 +145,8 @@ const Dashboard = () => {
           <p className="text-gray-600">Bienvenue dans votre espace de gestion des courriers</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats Cards and Today's Schedule */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -158,7 +163,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -175,7 +179,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -192,7 +195,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
             <div className="flex items-center justify-between">
               <div>
@@ -209,12 +211,34 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Agenda du jour</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Réunion équipe</p>
+                  <p className="text-xs text-gray-600">09:00 - 10:00</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Traitement urgent</p>
+                  <p className="text-xs text-gray-600">14:00 - 15:00</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Recent Mail List */}
-          <div className="lg:col-span-2">
+          <div>
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-4">
@@ -224,7 +248,7 @@ const Dashboard = () => {
                     Nouveau courrier
                   </button>
                 </div>
-                
+
                 {/* Search and Filter */}
                 <div className="flex items-center gap-4">
                   <div className="relative flex-1">
@@ -243,7 +267,6 @@ const Dashboard = () => {
                   </button>
                 </div>
               </div>
-
               <div className="divide-y divide-gray-200">
                 {recentMails.map((mail) => (
                   <div key={mail.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${getPriorityColor(mail.priority)}`}>
@@ -264,21 +287,17 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Eye className="w-4 h-4" />
-                        </button>
                         <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
+                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <Share2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
               <div className="p-4 border-t border-gray-200">
                 <button className="w-full text-center text-blue-600 hover:text-blue-800 font-medium py-2">
                   Voir tous les courriers
@@ -286,76 +305,123 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                  <Mail className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">Enregistrer courrier</span>
-                </button>
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                  <FileText className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">Générer rapport</span>
-                </button>
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium">Gérer agents</span>
-                </button>
+        {/* Additional Sections for Director General */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Monthly Evolution */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Évolution mensuelle des courriers</h3>
+            </div>
+            <div className="bg-gray-100 rounded-lg p-4">
+              <p className="text-center text-gray-500">Graphique d'évolution mensuelle</p>
+            </div>
+          </div>
+
+          {/* Department Distribution */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Répartition par département</h3>
+            </div>
+            <div className="bg-gray-100 rounded-lg p-4">
+              <p className="text-center text-gray-500">Graphique de répartition</p>
+            </div>
+          </div>
+
+          {/* Critical Mails */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Courriers critiques non traités</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Courrier critique 1</p>
+                  <p className="text-xs text-gray-600">Urgence élevée</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Courrier critique 2</p>
+                  <p className="text-xs text-gray-600">Urgence moyenne</p>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Today's Schedule */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Agenda du jour</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">Réunion équipe</p>
-                    <p className="text-xs text-gray-600">09:00 - 10:00</p>
-                  </div>
+          {/* Top Departments */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <List className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Top 5 des services les plus sollicités</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Service Comptabilité</p>
+                  <p className="text-xs text-gray-600">25 courriers</p>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">Traitement urgent</p>
-                    <p className="text-xs text-gray-600">14:00 - 15:00</p>
-                  </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Service RH</p>
+                  <p className="text-xs text-gray-600">20 courriers</p>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* System Status */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">État du système</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Base de données</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
-                  </div>
+          {/* Processing Times */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <ClockIcon className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Délais moyens de traitement</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Service Comptabilité</p>
+                  <p className="text-xs text-gray-600">2 jours</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Serveur mail</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
-                  </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Service RH</p>
+                  <p className="text-xs text-gray-600">1 jour</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Sauvegarde</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-yellow-600">En cours</span>
-                  </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <UserCheck className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Performance des chefs de service</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Chef de service Comptabilité</p>
+                  <p className="text-xs text-gray-600">Performance élevée</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Chef de service RH</p>
+                  <p className="text-xs text-gray-600">Performance moyenne</p>
                 </div>
               </div>
             </div>
