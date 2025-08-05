@@ -135,103 +135,20 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de bord</h1>
-          <p className="text-gray-600">Bienvenue dans votre espace de gestion des courriers</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Courriers du jour</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">12</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600 text-sm font-medium">+8%</span>
-                  <span className="text-gray-500 text-sm">vs hier</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Mail className="text-blue-600 w-6 h-6" />
-              </div>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de bord Administrateur</h1>
+            <p className="text-gray-600">Bienvenue dans votre espace de gestion d'utilisateurs</p>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">En attente</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">5</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <ArrowDownRight className="w-4 h-4 text-red-500" />
-                  <span className="text-red-600 text-sm font-medium">-12%</span>
-                  <span className="text-gray-500 text-sm">vs hier</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <Clock className="text-yellow-600 w-6 h-6" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Traités</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">7</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <ArrowUpRight className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600 text-sm font-medium">+15%</span>
-                  <span className="text-gray-500 text-sm">vs hier</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <FileText className="text-green-600 w-6 h-6" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Agents actifs</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">3</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <span className="text-blue-600 text-sm font-medium">Stable</span>
-                  <span className="text-gray-500 text-sm">aujourd'hui</span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Users className="text-purple-600 w-6 h-6" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Mail List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Courriers récents</h2>
-                  <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    <Plus className="w-4 h-4" />
-                    Nouveau courrier
-                  </button>
-                </div>
+          <div className="p-6 border-b border-gray-200">
                 
                 {/* Search and Filter */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
-                      placeholder="Rechercher un courrier..."
+                      placeholder="Rechercher un utilisateur..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50"
@@ -244,72 +161,235 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="divide-y divide-gray-200">
-                {recentMails.map((mail) => (
-                  <div key={mail.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${getPriorityColor(mail.priority)}`}>
+          {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <div className="bg-blue-100/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-blue-200 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                  <div>
                     <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-medium text-gray-900 truncate">{mail.subject}</h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(mail.status)}`}>
-                            {getStatusText(mail.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>De: {mail.sender}</span>
-                          <span>•</span>
-                          <span>{mail.type}</span>
-                          <span>•</span>
-                          <span>{mail.date} à {mail.time}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div>
+                      <p className="text-gray-700 text-sm font-medium">Nombre d'utilisateurs</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">12</p>
+                      <div className="flex items-center gap-1 mt-2">
+                      <ArrowUpRight className="w-4 h-4 text-green-500" />
+                      <span className="text-green-600 text-sm font-medium">+8%</span>
+                      <span className="text-gray-500 text-sm">vs hier</span>
                       </div>
                     </div>
+                    <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center">
+                      <Users className="text-purple-700 w-6 h-6" />
+                    </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <div className="mt-4">
+                    <a
+                    href="/agence/utilisateurs/liste-utilisateurs"
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full justify-center"
+                    >
+                    Voir la liste
+                    </a>
+                  </div>
+                  </div>
 
-              <div className="p-4 border-t border-gray-200">
-                <button className="w-full text-center text-blue-600 hover:text-blue-800 font-medium py-2">
-                  Voir tous les courriers
-                </button>
+                  <div className="bg-yellow-100/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-yellow-200 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-700 text-sm font-medium"> Activité récente</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">5</p>
+                      <div className="flex items-center gap-1 mt-2">
+                      <ArrowDownRight className="w-4 h-4 text-red-500" />
+                      <span className="text-red-600 text-sm font-medium">-12%</span>
+                      <span className="text-gray-500 text-sm">vs hier</span>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 bg-yellow-200 rounded-xl flex items-center justify-center">
+                      <Clock className="text-yellow-700 w-6 h-6" />
+                    </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <a
+                    href=""
+                    className="flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors w-full justify-center"
+                    >
+                    Voir tout le journal
+                    </a>
+                  </div>
+                  </div>
+
+                  <div className="bg-green-100/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-green-200 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-700 text-sm font-medium">Exportation des rapports
+                      </p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">7</p>
+                      <div className="flex items-center gap-1 mt-2">
+                      <ArrowUpRight className="w-4 h-4 text-green-500" />
+                      <span className="text-green-600 text-sm font-medium">+15%</span>
+                      <span className="text-gray-500 text-sm">vs hier</span>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center">
+                      <FileText className="text-green-700 w-6 h-6" />
+                    </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <a
+                    href=""
+                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-full justify-center"
+                    >
+                    Exporter maintenant
+                    </a>
+                  </div>
+                  </div>
+
+                  <div className="bg-indigo-100/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-indigo-200 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-700 text-sm font-medium">Agents actifs</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">3</p>
+                      <div className="flex items-center gap-1 mt-2">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <span className="text-blue-600 text-sm font-medium">Stable</span>
+                      <span className="text-gray-500 text-sm">aujourd'hui</span>
+                      </div>
+                    </div>
+                    <div className="w-12 h-12 bg-indigo-200 rounded-xl flex items-center justify-center">
+                      <Users className="text-indigo-700 w-6 h-6" />
+                    </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <a
+                    href=""
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors w-full justify-center"
+                    >
+                    Voir les connexions
+                    </a>
+                  </div>
+                  </div>
+                  {/* Carte Création Utilisateur */}
+              <div className="bg-blue-200/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-blue-300 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                <div>
+            <p className="text-gray-700 text-sm font-medium flex items-center gap-1">
+              <Users className="w-4 h-4 text-blue-500" />
+              Création utilisateur
+            </p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">Ajouter</p>
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-blue-600 text-sm font-medium">Créer un nouvel utilisateur</span>
+            </div>
+                </div>
+                <div className="mt-4">
+            {/* Remplacez ce bouton par un lien ou une logique de boîte de dialogue selon votre besoin */}
+            <a href="/agence/utilisateurs/form-utilisateur"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full justify-center"
+              //onClick={(FormUtilisateur) => setShowUserDialog(true)} // Exemple pour ouvrir une boîte de dialogue
+            >
+              <Plus className="w-4 h-4" />
+              Ajouter un utilisateur
+              
+            </a>
+            {/* Placez ici la logique de redirection ou de boîte de dialogue */}
+                </div>
+              </div>
+              {/* Carte Création Catégorie de Courrier */}
+              <div className="bg-green-200/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-green-300 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                <div>
+            <p className="text-gray-700 text-sm font-medium flex items-center gap-1">
+              <FileText className="w-4 h-4 text-green-500" />
+              Création catégorie
+            </p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">Ajouter</p>
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-green-600 text-sm font-medium">Créer une nouvelle catégorie de courrier</span>
+            </div>
+                </div>
+                <div className="mt-4">
+            <a href="/agence/utilisateurs/form-categorie"
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-full justify-center"
+            >
+              <Plus className="w-4 h-4" />
+              Ajouter une catégorie
+            </a>
+                </div>
+              </div>
+            {/* Carte Alertes Système */}
+                  <div className="bg-red-100/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-red-200 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
+                    <div>
+                    <p className="text-gray-700 text-sm font-medium flex items-center gap-1">
+                      <Bell className="w-4 h-4 text-red-500" />
+                      Alertes système
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 mt-1">2</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <span className="text-red-600 text-sm font-medium">Nouvelles alertes</span>
+                    </div>
+                    </div>
+                    <div className="mt-4">
+                    <a
+                    href="/agence/agents"
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors w-full justify-center"
+                    >
+                    Gerer les alertes
+                    </a>
+                  </div>
+                  </div>
+                  
+                    {/* Carte Paramètres */}
+              <div className="bg-gray-200/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-gray-300 hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-700 text-sm font-medium">Paramètres</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">1</p>
+              <div className="flex items-center gap-1 mt-2">
+                <Settings className="w-4 h-4 text-gray-500" />
+                <span className="text-gray-600 text-sm font-medium">Configurer</span>
               </div>
             </div>
-          </div>
+            <div className="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center">
+              <Settings className="text-gray-700 w-6 h-6" />
+            </div>
+                </div>
+              </div>
+            </div>
 
+            {/* Main Content */}
+       
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+              <div className="flex gap-3">
+                <button
+                  className="flex-1 flex items-center justify-center gap-2 p-3 text-left rounded-lg transition-colors border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 shadow"
+                  style={{ boxShadow: '0 2px 8px 0 rgba(59,130,246,0.08)' }}
+                >
                   <Mail className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">Enregistrer courrier</span>
+                  <span className="font-medium text-blue-700">Réinitialiser</span>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                <button
+                  className="flex-1 flex items-center justify-center gap-2 p-3 text-left rounded-lg transition-colors border-2 border-green-200 bg-green-50 hover:bg-green-100 shadow"
+                  style={{ boxShadow: '0 2px 8px 0 rgba(34,197,94,0.08)' }}
+                >
                   <FileText className="w-5 h-5 text-green-600" />
-                  <span className="font-medium">Générer rapport</span>
+                  <span className="font-medium text-green-700">Générer rapport</span>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                <a
+                  href="/agence/roles/ajout-role"
+                  className="flex-1 flex items-center justify-center gap-2 p-3 text-left rounded-lg transition-colors border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 shadow"
+                  style={{ boxShadow: '0 2px 8px 0 rgba(139,92,246,0.08)' }}
+                >
                   <Users className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium">Gérer agents</span>
-                </button>
+                  <span className="font-medium text-purple-700">Gérer les rôles</span>
+                </a>
               </div>
             </div>
-
-            {/* Today's Schedule */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+            {/* <div className="bg-white/70 backdrop-blur-sm rounded-2x2 shadow-sm border border-white/20 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Agenda du jour</h3>
@@ -330,7 +410,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* System Status */}
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
@@ -362,7 +442,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
