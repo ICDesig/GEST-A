@@ -29,13 +29,13 @@ const Dashboard = () => {
 
 
     useEffect(() => {
-    const nomStocké = localStorage.getItem('nom');
+    const nomStocké = localStorage.getItem('name');
     if (nomStocké) {
       setNom(nomStocké);
     }
   }, []);
 // Exemple à placer juste après un login réussi ou une action utilisateur
-    localStorage.setItem('nom', 'Chretien');
+    localStorage.setItem('name', 'Chretien');
 
     // Récupération du nom à partir du cookie
     

@@ -28,7 +28,7 @@ const Login = () => {
   setError('');
 
   try {
-    const response = await axios.post('http://192.168.100.14:8000/api/gosoft/login', {
+    const response = await axios.post('http://192.168.100.14:8000/api/gosoft/users/login', {
       email: credentials.email,
       password: credentials.password
     });

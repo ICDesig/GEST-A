@@ -17,8 +17,7 @@ import FormP from './pages/agence/Direction2/formulaireP';
 import FormM from './pages/agence/Direction2/formulaireM';
 
 import Accueil3 from './pages/agence/Direction3/Accueil3';
-import AccueilB from './pages/agence/Direction2/AccueilB';
-import Accueil3 from './pages/agence/direction3/Accueil3';
+
 import FormUtilisateur from './pages/agence/utilisateurs/FormUtilisateur';
 import FormCategorie from './pages/agence/utilisateurs/Formcategorie';
 import AjoutRole from './pages/agence/roles/AjouterRole';

@@ -36,31 +36,52 @@ import {
 
 // Composant pour afficher les fichiers joints
 const FichierJoint = ({ fichier, onView }) => {
-  const getFileIcon = (type) => {
-    if (type?.includes('image')) return <Image size={16} className="text-blue-500" />;
-    if (type?.includes('pdf')) return <FileText size={16} className="text-red-500" />;
+  const baseURL = 'http://192.168.100.14:8000';
+  
+  const getFileIcon = (path) => {
+    const extension = path?.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+      return <Image size={16} className="text-blue-500" />;
+    }
+    if (extension === 'pdf') {
+      return <FileText size={16} className="text-red-500" />;
+    }
     return <File size={16} className="text-gray-500" />;
+  };
+
+  const getFileName = (path) => {
+    return path?.split('/').pop() || 'Fichier';
+  };
+
+  const getFileSize = (fichier) => {
+    // Si vous avez une taille dans l'API, utilisez-la, sinon "Taille inconnue"
+    return 'Taille inconnue';
   };
 
   return (
     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
       <div className="flex items-center space-x-3">
-        {getFileIcon(fichier.type)}
+        {getFileIcon(fichier.fichier_path)}
         <div>
-          <p className="text-sm font-medium text-gray-900">{fichier.nom}</p>
-          <p className="text-xs text-gray-500">{fichier.taille || 'Taille inconnue'}</p>
+          <p className="text-sm font-medium text-gray-900">{getFileName(fichier.fichier_path)}</p>
+          <p className="text-xs text-gray-500">{getFileSize(fichier)}</p>
         </div>
       </div>
       <div className="flex space-x-2">
         <button
-          onClick={() => onView(fichier)}
+          onClick={() => onView({
+            ...fichier,
+            nom: getFileName(fichier.fichier_path),
+            url: `${baseURL}/storage/${fichier.fichier_path}`,
+            type: fichier.fichier_path?.split('.').pop()?.toLowerCase()
+          })}
           className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
           title="Voir le fichier"
         >
           <Eye size={14} />
         </button>
         <button
-          onClick={() => window.open(fichier.url, '_blank')}
+          onClick={() => window.open(`${baseURL}/storage/${fichier.fichier_path}`, '_blank')}
           className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
           title="Télécharger"
         >
@@ -75,8 +96,8 @@ const FichierJoint = ({ fichier, onView }) => {
 const ModalViewFile = ({ fichier, onClose }) => {
   if (!fichier) return null;
 
-  const isImage = fichier.type?.includes('image');
-  const isPdf = fichier.type?.includes('pdf');
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fichier.type);
+  const isPdf = fichier.type === 'pdf';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -119,6 +140,9 @@ const ModalDetailCourrier = ({ courrier, onClose, onSend }) => {
 
   if (!courrier) return null;
 
+  const isPersonnePhysique = courrier.type_personne === 'physique';
+  const isPersonneMorale = courrier.type_personne === 'morale';
+
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -154,30 +178,52 @@ const ModalDetailCourrier = ({ courrier, onClose, onSend }) => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Statut</label>
                 <div className="flex items-center space-x-2">
-                  {courrier.statut === 1 && <AlertCircle className="text-orange-500" size={16} />}
-                  {courrier.statut === 2 && <Clock className="text-blue-500" size={16} />}
-                  {courrier.statut === 3 && <CheckCircle className="text-green-500" size={16} />}
+                  {courrier.statut_id === 1 && <AlertCircle className="text-orange-500" size={16} />}
+                  {courrier.statut_id === 2 && <Clock className="text-blue-500" size={16} />}
+                  {courrier.statut_id === 3 && <CheckCircle className="text-green-500" size={16} />}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    courrier.statut === 1 ? 'bg-orange-100 text-orange-800' :
-                    courrier.statut === 2 ? 'bg-blue-100 text-blue-800' :
+                    courrier.statut_id === 1 ? 'bg-orange-100 text-orange-800' :
+                    courrier.statut_id === 2 ? 'bg-blue-100 text-blue-800' :
                     'bg-green-100 text-green-800'
                   }`}>
-                    {courrier.statut === 1 ? 'Reçu' : courrier.statut === 2 ? 'En cours' : 'Traité'}
+                    {courrier.statut_id === 1 ? 'Reçu' : courrier.statut_id === 2 ? 'En cours' : 'Traité'}
                   </span>
                 </div>
               </div>
+              
+              {/* Type de personne */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Nom</label>
-                <p className="text-gray-900">{courrier.nom || 'N/A'}</p>
+                <label className="text-sm font-medium text-gray-700">Type de personne</label>
+                <p className="text-gray-900">{courrier.type_personne || 'N/A'}</p>
               </div>
+              
+              {/* Type de courrier */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Prénom</label>
-                <p className="text-gray-900">{courrier.prenom || 'N/A'}</p>
+                <label className="text-sm font-medium text-gray-700">Type de courrier</label>
+                <p className="text-gray-900">{courrier.type_courrier || 'N/A'}</p>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Structure</label>
-                <p className="text-gray-900">{courrier.nom_structure || 'N/A'}</p>
-              </div>
+
+              {/* Affichage conditionnel selon le type de personne */}
+              {!isPersonneMorale && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Nom</label>
+                    <p className="text-gray-900">{courrier.nom || 'N/A'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Prénom</label>
+                    <p className="text-gray-900">{courrier.prenom || 'N/A'}</p>
+                  </div>
+                </>
+              )}
+              
+              {!isPersonnePhysique && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Structure</label>
+                  <p className="text-gray-900">{courrier.nom_structure || 'N/A'}</p>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Email</label>
                 <p className="text-gray-900">{courrier.email || 'N/A'}</p>
@@ -192,68 +238,30 @@ const ModalDetailCourrier = ({ courrier, onClose, onSend }) => {
               </div>
             </div>
 
-            {/* Informations de lieu */}
-            {(courrier.adresse || courrier.ville || courrier.pays) && (
-              <div className="border-t pt-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <MapPin size={20} className="text-gray-700" />
-                  <h4 className="text-lg font-semibold text-gray-900">Informations de lieu</h4>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {courrier.adresse && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Adresse</label>
-                      <p className="text-gray-900">{courrier.adresse}</p>
-                    </div>
-                  )}
-                  {courrier.ville && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Ville</label>
-                      <p className="text-gray-900">{courrier.ville}</p>
-                    </div>
-                  )}
-                  {courrier.pays && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Pays</label>
-                      <p className="text-gray-900">{courrier.pays}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Objet et contenu */}
-            {(courrier.objet || courrier.contenu) && (
+            {/* Contenu du courrier */}
+            {courrier.texte && (
               <div className="border-t pt-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Contenu du courrier</h4>
-                {courrier.objet && (
-                  <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium text-gray-700">Objet</label>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{courrier.objet}</p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Message</label>
+                  <div className="text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                    {courrier.texte}
                   </div>
-                )}
-                {courrier.contenu && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Message</label>
-                    <div className="text-gray-900 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
-                      {courrier.contenu}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
             {/* Fichiers joints */}
-            {courrier.fichiers_joints && courrier.fichiers_joints.length > 0 && (
+            {courrier.fichiers && courrier.fichiers.length > 0 && (
               <div className="border-t pt-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <Paperclip size={20} className="text-gray-700" />
                   <h4 className="text-lg font-semibold text-gray-900">
-                    Fichiers joints ({courrier.fichiers_joints.length})
+                    Fichiers joints ({courrier.fichiers.length})
                   </h4>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {courrier.fichiers_joints.map((fichier, index) => (
+                  {courrier.fichiers.map((fichier, index) => (
                     <FichierJoint
                       key={index}
                       fichier={fichier}
@@ -280,22 +288,19 @@ const ModalDetailCourrier = ({ courrier, onClose, onSend }) => {
 
 // Modal pour l'envoi de courrier
 const ModalEnvoyerCourrier = ({ courrier, onClose, onConfirm }) => {
-  const [destinataire, setDestinataire] = useState('');
-  const [message, setMessage] = useState('');
+  /*const [destinataire, setDestinataire] = useState('');*/
+  /*const [message, setMessage] = useState('');*/
   const [loading, setLoading] = useState(false);
 
   const handleEnvoyer = async () => {
-    if (!destinataire.trim()) {
-      alert('Veuillez saisir un destinataire');
-      return;
-    }
+    if (!courrier) return;
     
     setLoading(true);
     try {
       await onConfirm({
         courrier_id: courrier.id,
-        destinataire: destinataire.trim(),
-        message: message.trim()
+       // destinataire: destinataire.trim(),
+       // message: message.trim()
       });
       onClose();
     } catch (error) {
@@ -317,31 +322,7 @@ const ModalEnvoyerCourrier = ({ courrier, onClose, onConfirm }) => {
         </div>
         
         <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Destinataire *
-            </label>
-            <input
-              type="text"
-              value={destinataire}
-              onChange={(e) => setDestinataire(e.target.value)}
-              placeholder="Service, personne ou département"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Message (optionnel)
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ajouter un message..."
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white/50"
-            />
-          </div>
+         
         </div>
         
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -390,6 +371,11 @@ const Dashboard = () => {
   const [courrierToSend, setCourrierToSend] = useState(null);
   const [allCourriers, setAllCourriers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [systemStatus, setSystemStatus] = useState({
+    database: { status: 'checking', label: 'Vérification...' },
+    api: { status: 'checking', label: 'Vérification...' },
+    sync: { status: 'checking', label: 'Vérification...' }
+  });
 
   const baseURL = 'http://192.168.100.14:8000';
 
@@ -434,16 +420,55 @@ const Dashboard = () => {
     }
   };
 
-  const handleEnvoyerCourrier = async (data) => {
+  const checkSystemStatus = async () => {
+    // Vérifier la base de données et l'API
     try {
-      const response = await axios.post(`${baseURL}/api/gosoft/courriers/${data.courrier_id}/envoyer`, {
-        destinataire: data.destinataire,
-        message: data.message
+      const response = await axios.get(`${baseURL}/api/gosoft/courriers/statistiques?periode=day`);
+      setSystemStatus(prev => ({
+        ...prev,
+        database: { status: 'operational', label: 'Opérationnel' },
+        api: { status: 'operational', label: 'Opérationnel' },
+        sync: { status: 'operational', label: 'Récent' }
+      }));
+    } catch (error) {
+      setSystemStatus(prev => ({
+        ...prev,
+        database: { status: 'error', label: 'Erreur' },
+        api: { status: 'error', label: 'Erreur' },
+        sync: { status: 'error', label: 'Échec' }
+      }));
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'operational': return 'bg-green-500';
+      case 'error': return 'bg-red-500';
+      case 'checking': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusTextColor = (status) => {
+    switch (status) {
+      case 'operational': return 'text-green-600';
+      case 'error': return 'text-red-600';
+      case 'checking': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+ const handleEnvoyerCourrier = async (data) => {
+    try {
+      // Modifier uniquement le statut du courrier à "En cours" (statut_id = 2)
+      const response = await axios.put(`${baseURL}/api/gosoft/courriers/edit/${data.courrier_id}`, {
+        statut_id: 2  // ID pour "En cours"
       });
       
       // Actualiser les données après envoi
       await fetchCourriers();
       await fetchStatistiques();
+      await fetchAllCourriers();
       
       alert('Courrier envoyé avec succès !');
     } catch (error) {
@@ -457,11 +482,21 @@ const Dashboard = () => {
     fetchStatistiques();
     fetchNotifications();
     fetchAllCourriers();
+    checkSystemStatus();
   }, [periode, page]);
 
   useEffect(() => {
     handleSearch();
   }, [searchTerm, allCourriers]);
+
+  // Vérifier le statut du système toutes les 30 secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkSystemStatus();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = () => {
     const term = searchTerm.toLowerCase();
@@ -472,7 +507,7 @@ const Dashboard = () => {
       c.nom_structure?.toLowerCase().includes(term) ||
       c.email?.toLowerCase().includes(term) ||
       c.phone?.toLowerCase().includes(term) ||
-      c.objet?.toLowerCase().includes(term)
+      c.texte?.toLowerCase().includes(term)
     );
     setFilteredCourriers(results);
   };
@@ -482,8 +517,8 @@ const Dashboard = () => {
     setPage(1);
   };
 
-  const getStatutColor = (statut) => {
-    switch (statut) {
+  const getStatutColor = (statut_id) => {
+    switch (statut_id) {
       case 1: return 'bg-orange-100 text-orange-800';
       case 2: return 'bg-blue-100 text-blue-800';
       case 3: return 'bg-green-100 text-green-800';
@@ -491,8 +526,8 @@ const Dashboard = () => {
     }
   };
 
-  const getStatutIcon = (statut) => {
-    switch (statut) {
+  const getStatutIcon = (statut_id) => {
+    switch (statut_id) {
       case 1: return <AlertCircle size={16} />;
       case 2: return <Clock size={16} />;
       case 3: return <CheckCircle size={16} />;
@@ -500,21 +535,12 @@ const Dashboard = () => {
     }
   };
 
-  const getStatutLabel = (statut) => {
-    switch (statut) {
+  const getStatutLabel = (statut_id) => {
+    switch (statut_id) {
       case 1: return 'Reçu';
       case 2: return 'En cours';
       case 3: return 'Traité';
       default: return 'Inconnu';
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'border-l-red-500';
-      case 'medium': return 'border-l-yellow-500';
-      case 'low': return 'border-l-green-500';
-      default: return 'border-l-gray-300';
     }
   };
 
@@ -525,11 +551,11 @@ const Dashboard = () => {
     year: 'Cette année'
   };
 
-  // Calcul des statistiques pour l'affichage
+  // Calcul des statistiques corrigé pour l'affichage des cartes du haut
   const statsData = {
     today: totalCourriers,
-    pending: statistiques.find(s => s.nom === 'Reçus')?.total || 0,
-    processed: statistiques.find(s => s.nom === 'Traités')?.total || 0,
+    pending: statistiques.find(s => s.nom === 'Reçu')?.total || 0,
+    processed: statistiques.find(s => s.nom === 'Traité')?.total || 0,
     inProgress: statistiques.find(s => s.nom === 'En cours')?.total || 0
   };
 
@@ -767,30 +793,35 @@ const Dashboard = () => {
                 ) : (
                   (searchTerm ? filteredCourriers : courriers).slice(0, 10).map((courrier, index) => (
                     <div key={courrier.id} className={`p-4 hover:bg-gray-50/50 transition-colors border-l-4 ${
-                      courrier.statut === 1 ? 'border-l-orange-500' :
-                      courrier.statut === 2 ? 'border-l-blue-500' :
+                      courrier.statut_id === 1 ? 'border-l-orange-500' :
+                      courrier.statut_id === 2 ? 'border-l-blue-500' :
                       'border-l-green-500'
                     }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-medium text-gray-900 truncate">
-                              {courrier.objet || `Courrier de ${courrier.prenom} ${courrier.nom}`}
+                              {courrier.texte ? 
+                                (courrier.texte.length > 50 ? courrier.texte.substring(0, 50) + '...' : courrier.texte) :
+                                `Courrier de ${courrier.prenom || ''} ${courrier.nom || courrier.nom_structure || 'Inconnu'}`
+                              }
                             </h3>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatutColor(courrier.statut)}`}>
-                              {getStatutLabel(courrier.statut)}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatutColor(courrier.statut_id)}`}>
+                              {getStatutLabel(courrier.statut_id)}
                             </span>
-                            {courrier.fichiers_joints && courrier.fichiers_joints.length > 0 && (
+                            {courrier.fichiers && courrier.fichiers.length > 0 && (
                               <div className="flex items-center space-x-1">
                                 <Paperclip size={12} className="text-gray-500" />
-                                <span className="text-xs text-gray-600">{courrier.fichiers_joints.length}</span>
+                                <span className="text-xs text-gray-600">{courrier.fichiers.length}</span>
                               </div>
                             )}
                           </div>
                           <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>De: {courrier.prenom} {courrier.nom}</span>
-                            <span>•</span>
-                            <span>{courrier.nom_structure || 'Structure inconnue'}</span>
+                            <span>De: {
+                              courrier.type_personne === 'morale' ? 
+                                (courrier.nom_structure || 'Structure inconnue') :
+                                (`${courrier.prenom || ''} ${courrier.nom || ''}`.trim() || 'Nom inconnu')
+                            }</span>
                             <span>•</span>
                             <span>Code: {courrier.code}</span>
                             {courrier.created_at && (
@@ -919,22 +950,28 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Base de données</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
+                    <div className={`w-2 h-2 rounded-full ${getStatusColor(systemStatus.database.status)}`}></div>
+                    <span className={`text-sm font-medium ${getStatusTextColor(systemStatus.database.status)}`}>
+                      {systemStatus.database.label}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Serveur API</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-green-600">Opérationnel</span>
+                    <div className={`w-2 h-2 rounded-full ${getStatusColor(systemStatus.api.status)}`}></div>
+                    <span className={`text-sm font-medium ${getStatusTextColor(systemStatus.api.status)}`}>
+                      {systemStatus.api.label}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Dernière synchro</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-blue-600">Récent</span>
+                    <div className={`w-2 h-2 rounded-full ${getStatusColor(systemStatus.sync.status)}`}></div>
+                    <span className={`text-sm font-medium ${getStatusTextColor(systemStatus.sync.status)}`}>
+                      {systemStatus.sync.label}
+                    </span>
                   </div>
                 </div>
               </div>
