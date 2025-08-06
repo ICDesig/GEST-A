@@ -462,7 +462,7 @@ const Dashboard = () => {
     try {
       // Modifier uniquement le statut du courrier à "En cours" (statut_id = 2)
       const response = await axios.put(`${baseURL}/api/gosoft/courriers/edit/${data.courrier_id}`, {
-        statut_id: 2  // ID pour "En cours"
+        statut: 2  // ID pour "En cours"
       });
       
       // Actualiser les données après envoi
